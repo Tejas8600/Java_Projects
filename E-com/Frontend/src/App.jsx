@@ -11,6 +11,11 @@ import UpdateProduct from "./components/UpdateProduct";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Signup from "./components/Signup";
+import Login from "./components/Login";
+import UserDashboard from "./components/UserDashboard";
+import AdminDashboard from "./components/AdminDashboard";
+// import AnimatedSignup from "./components/AnimatedSignup";
 
 
 function App() {
@@ -52,8 +57,13 @@ function App() {
           <Route path="/add_product" element={<AddProduct />} />
           <Route path="/product" element={<Product  />} />
           <Route path="product/:id" element={<Product  />} />
-          <Route path="/cart" element={<Cart />} />
+          <Route path="/cart" element={<Cart/>} />
           <Route path="/product/update/:id" element={<UpdateProduct />} />
+          <Route path="/signup" element={<Signup />}/>
+          <Route path="/login" element={<Login />} />
+          <Route path="/user-dashboard" element={<UserDashboard/>}/>
+          <Route path="/admin-dashboard" element={<AdminDashboard/>}/>
+          // {/* <Route path="/signup" element={<AnimatedSignup />} /> */}
         </Routes>
       </BrowserRouter>
     </AppProvider>

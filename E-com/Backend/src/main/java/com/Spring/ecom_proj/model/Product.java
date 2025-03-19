@@ -25,16 +25,16 @@ public class Product {
     private BigDecimal price;
     private String category;
 
-//    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd-MM-yyyy")
+    //    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd-MM-yyyy")
     private Date releaseDate;
     private String productAvailable;
     private int stockQuantity;
 
-//    3 things for Image
+    //    3 things for Image
     private String imageName;
     private String imageType;
 
-//    "LOB" Used to strore large object in "byte[]".
+    //    "LOB" Used to strore large object in "byte[]".
     @Lob
     private byte[] imageData;
 

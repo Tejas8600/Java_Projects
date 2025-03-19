@@ -1,6 +1,8 @@
 import axios from "../axios";
 import { useState, useEffect, createContext } from "react";
 
+
+
 const AppContext = createContext({
   data: [],
   isError: "",
@@ -12,13 +14,18 @@ const AppContext = createContext({
   
 });
 
+
+
 export const AppProvider = ({ children }) => {
   const [data, setData] = useState([]);
   const [isError, setIsError] = useState("");
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
+  console.log('Context initialized:', cart); //Debugging
+  
 
 
   const addToCart = (product) => {
+    console.log("addToCart called with:", product); // Debugging
     const existingProductIndex = cart.findIndex((item) => item.id === product.id);
     if (existingProductIndex !== -1) {
       const updatedCart = cart.map((item, index) =>
@@ -27,12 +34,15 @@ export const AppProvider = ({ children }) => {
           : item
       );
       setCart(updatedCart);
+      console.log('Updated cart state:', updatedCart); //Debugging
       localStorage.setItem('cart', JSON.stringify(updatedCart));
     } else {
       const updatedCart = [...cart, { ...product, quantity: 1 }];
       setCart(updatedCart);
+      console.log('Updated cart state:', updatedCart); //Debugging
       localStorage.setItem('cart', JSON.stringify(updatedCart));
     }
+    
   };
 
   const removeFromCart = (productId) => {

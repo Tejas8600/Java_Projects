@@ -2,10 +2,12 @@ package com.Spring.ecom_proj.controller;
 
 import com.Spring.ecom_proj.model.Product;
 import com.Spring.ecom_proj.service.ProductService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,18 +37,32 @@ public class ProductController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+//
+//    @PreAuthorize("hasRole('ADMIN')") // Allow admin access for adding products
+//    @PostMapping("/product")
+////    "@RequestBody" accepts the whole json while "@RequestPart" accepts some of the part.
+//    public ResponseEntity<?>addProduct(@RequestPart Product product,
+//                                       @RequestPart MultipartFile imageFile) {
+//        try {
+//            Product product1 = service.addProduct(product, imageFile);
+//            return new ResponseEntity<>(HttpStatus.CREATED);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
-    @PostMapping("/product")
-//    "@RequestBody" accepts the whole json while "@RequestPart" accepts some of the part.
-    public ResponseEntity<?>addProduct(@RequestPart Product product,
-                                       @RequestPart MultipartFile imageFile) {
-        try {
-            Product product1 = service.addProduct(product, imageFile);
-            return new ResponseEntity<>(HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PostMapping("/product")
+public ResponseEntity<?> addProduct(@RequestPart("product") String productJson,
+                                    @RequestPart MultipartFile imageFile) {
+    try {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Product product = objectMapper.readValue(productJson, Product.class);
+        Product savedProduct = service.addProduct(product, imageFile);
+        return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
+    } catch (Exception e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }}
 
 //    Method to get image
     @GetMapping("/product/{productId}/image")
@@ -58,8 +74,9 @@ public class ProductController {
                 .body(imageFile);
     }
 
+    @PreAuthorize("hasRole('ADMIN')") // Allow admin access for Updating products
     @PutMapping("/product/{id}")
-    public ResponseEntity<String> updateProduc (@PathVariable int id,
+    public ResponseEntity<String> updateProduct (@PathVariable int id,
                                                 @RequestPart Product product,
                                                 @RequestPart MultipartFile imageFile){
         try {
@@ -72,6 +89,8 @@ public class ProductController {
         }else{return new ResponseEntity<>("Error",HttpStatus.BAD_REQUEST);}
     }
 
+
+    @PreAuthorize("hasRole('ADMIN')") // Allow admin access for deleting products
     @DeleteMapping("/product/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable int id){
         Product product = service.getProductById(id);
