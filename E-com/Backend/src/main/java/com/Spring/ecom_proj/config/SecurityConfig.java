@@ -21,7 +21,7 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
-    //  Constructor Injection
+    // ✅ Constructor Injection
     public SecurityConfig(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
@@ -37,9 +37,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/signup", "/api/cart/**").permitAll()
-                        .requestMatchers("/admin-dashboard").hasAuthority("ROLE_ADMIN") // ✅ Fix authority prefix
-                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER") // ✅ Fix authority prefix
+                        .requestMatchers("/auth/login", "/auth/signup").permitAll()
+                        .requestMatchers("/admin-dashboard").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER") // ✅ Ensure both roles can access products
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -51,6 +51,7 @@ public class SecurityConfig {
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
                     config.setAllowCredentials(true);
+                    config.setExposedHeaders(List.of("Authorization")); // ✅ Allow Authorization header to be passed
                     return config;
                 }));
 

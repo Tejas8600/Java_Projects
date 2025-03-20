@@ -232,10 +232,10 @@
 
 
 //******************************** navbar according to profile ******************************** */
-
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import AppContext from "../Context/Context";
 
 const Navbar = ({ onSelectCategory }) => {
   const getInitialTheme = () => localStorage.getItem("theme") || "light-theme";
@@ -243,226 +243,220 @@ const Navbar = ({ onSelectCategory }) => {
   const [theme, setTheme] = useState(getInitialTheme());
   const [input, setInput] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [noResults, setNoResults] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+
+  const { cart } = useContext(AppContext);
+
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
-  // console.log("Role from localStorage:", role);
-
+  const userEmail = localStorage.getItem("userEmail");
   const navigate = useNavigate();
 
   useEffect(() => {
     document.body.className = theme;
-  }, [theme, role]);
+  }, [theme]);
 
+  // ✅ Handle Logout
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
 
+  // ✅ Handle Search
   const handleChange = async (value) => {
     setInput(value);
-    if (value.length >= 1) {
+    if (value.length > 0) {
       setShowSearchResults(true);
       try {
         const response = await axios.get(
           `http://localhost:8080/api/products/search?keyword=${value}`
         );
         setSearchResults(response.data);
-        setNoResults(response.data.length === 0);
       } catch (error) {
-        console.error("Error searching:", error);
+        console.error("❌ Error searching:", error);
       }
     } else {
       setShowSearchResults(false);
-      setSearchResults([]);
-      setNoResults(false);
     }
   };
 
-  const handleCategorySelect = (category) => onSelectCategory(category);
-
+  // ✅ Theme Toggle
   const toggleTheme = () => {
     const newTheme = theme === "dark-theme" ? "light-theme" : "dark-theme";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
   };
 
-  const categories = ["Laptop", "Headphone", "Mobile", "Electronics", "Toys", "Fashion"];
-
   return (
-    <>
-      <header>
-        <nav className={`navbar navbar-expand-lg fixed-top ${theme}`}>
-          <div className="container-fluid">
-            <a className="navbar-brand" href="https://tejas8600.github.io/Portfolio/">
-              Tejas Puri
-            </a>
+    <nav className={`navbar navbar-expand-lg fixed-top ${theme}`}>
+      <div className="container-fluid">
+        {/* ✅ Logo */}
+        <a className="navbar-brand" href="https://tejas8600.github.io/Portfolio/">
+          Tejas Puri
+        </a>
 
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-            >
-              <span className="navbar-toggler-icon"></span>
+        {/* ✅ Hamburger Menu */}
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        <div className="collapse navbar-collapse" id="navbarNav">
+          {/* ✅ Left Section (Home + Categories) */}
+          <ul className="navbar-nav me-auto align-items-center">
+            <li className="nav-item">
+              <Link className="nav-link" to="/home">
+                Home
+              </Link>
+            </li>
+
+            {/* ✅ Categories */}
+            <li className="nav-item dropdown">
+              <Link
+                className="nav-link dropdown-toggle"
+                to="#"
+                id="categoryDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+              >
+                Categories
+              </Link>
+              <ul className="dropdown-menu">
+                {["Laptop", "Headphone", "Mobile", "Electronics", "Toys", "Fashion"].map(
+                  (category) => (
+                    <li key={category}>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => onSelectCategory(category)}
+                      >
+                        {category}
+                      </button>
+                    </li>
+                  )
+                )}
+              </ul>
+            </li>
+          </ul>
+
+          {/* ✅ Center Section (Search Bar) */}
+          <form className="d-flex me-auto search-form">
+            <input
+              className="form-control"
+              type="search"
+              placeholder="Search"
+              value={input}
+              onChange={(e) => handleChange(e.target.value)}
+              aria-label="Search"
+            />
+            {showSearchResults && (
+              <ul className="list-group position-absolute search-results">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result) => (
+                    <li key={result.id} className="list-group-item">
+                      <Link to={`/product/${result.id}`}>
+                        {result.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="list-group-item text-danger">
+                    No product with such name
+                  </li>
+                )}
+              </ul>
+            )}
+          </form>
+
+          {/* ✅ Right Section (User Info + Cart + Theme + Logout) */}
+          <div className="d-flex align-items-center gap-3">
+            {/* ✅ Display User Email */}
+            {token && userEmail && (
+              <span className="nav-link text-dark fw-semibold">
+                {`Welcome, ${userEmail.split("@")[0]}`}
+              </span>
+            )}
+
+            {/* ✅ Cart Icon */}
+            {token && (
+              <Link className="nav-link" to="/cart">
+                <i className="bi bi-cart-fill"></i>
+                {cart.length > 0 && (
+                  <span className="badge bg-danger ms-1">
+                    {cart.reduce((total, item) => total + item.quantity, 0)}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {/* ✅ Theme Toggle */}
+            <button className="btn btn-outline-secondary" onClick={toggleTheme}>
+              {theme === "dark-theme" ? (
+                <i className="bi bi-moon-fill"></i>
+              ) : (
+                <i className="bi bi-sun-fill"></i>
+              )}
             </button>
 
-            <div className="collapse navbar-collapse" id="navbarSupportedContent">
-              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/">
-                    Home
-                  </Link>
-                </li>
-
-                {/* Admin Links */}
-                {/* {token && role === "ADMIN" && (
-                  <>
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/admin-dashboard">
-                        Dashboard
-                      </Link>
-                    </li>
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/add_product">
-                        Add Product
-                      </Link>
-                    </li>
-                  </>
-                )} */}
-
-                {/* User Links */}
-                {token && role === "USER" && (
-                  <>
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/profile">
-                        Profile
-                      </Link>
-                    </li>
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/cart">
-                        My Cart
-                      </Link>
-                    </li>
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/orders">
-                        My Orders
-                      </Link>
-                    </li>
-                  </>
-                )}
-
-                {/* Category Dropdown */}
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle" href="/" data-bs-toggle="dropdown">
-                    Categories
-                  </a>
-                  <ul className="dropdown-menu">
-                    {categories.map((category) => (
-                      <li key={category}>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => handleCategorySelect(category)}
-                        >
-                          {category}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
-
-              {/* Search Bar */}
-              <div className="d-flex align-items-center me-3">
-                <input
-                  className="form-control me-2"
-                  type="search"
-                  placeholder="Search"
-                  value={input}
-                  onChange={(e) => handleChange(e.target.value)}
-                />
-                {showSearchResults && (
-                  <ul className="list-group position-absolute">
-                    {searchResults.length > 0 ? (
-                      searchResults.map((result) => (
-                        <li key={result.id} className="list-group-item">
-                          <Link to={`/product/${result.id}`}>{result.name}</Link>
-                        </li>
-                      ))
-                    ) : (
-                      noResults && (
-                        <li className="list-group-item text-danger">
-                          No product with such name
-                        </li>
-                      )
-                    )}
-                  </ul>
-                )}
-              </div>
-
-              {/* Theme Toggle */}
-              <button className="btn btn-outline-secondary me-2" onClick={toggleTheme}>
-                {theme === "dark-theme" ? (
-                  <i className="bi bi-moon-fill"></i>
-                ) : (
-                  <i className="bi bi-sun-fill"></i>
-                )}
+            {/* ✅ Logout Button */}
+            {token ? (
+              <button className="btn btn-danger" onClick={handleLogout}>
+                Logout
               </button>
-
-              {/* Auth Buttons */}
-              {token ? (
-                <button className="btn btn-danger me-2" onClick={handleLogout}>
-                  Logout
-                </button>
-              ) : (
-                <>
-                  <Link to="/login" className="btn btn-outline-primary me-2">
-                    Login
-                  </Link>
-                  <Link to="/signup" className="btn btn-primary">
-                    Signup
-                  </Link>
-                </>
-              )}
-            </div>
+            ) : (
+              <>
+                <Link className="btn btn-outline-primary" to="/login">
+                  Login
+                </Link>
+                <Link className="btn btn-primary" to="/signup">
+                  Signup
+                </Link>
+              </>
+            )}
           </div>
-        </nav>
-      </header>
+        </div>
+      </div>
 
-      {/* ✅ CSS */}
+      {/* ✅ Custom CSS for Fixing Alignment */}
       <style>
         {`
-          .btn-primary {
-            width: auto;
-            padding: 8px 16px;
-          }
           .navbar {
             background-color: var(--navbar-bg);
+            padding: 12px 20px;
           }
-          .navbar .nav-link,
-          .navbar-brand,
-          .navbar-toggler-icon,
-          .list-group-item a {
+          .nav-link {
+            font-size: 16px;
+            font-weight: 500;
             color: var(--text-color) !important;
           }
-          .form-control {
-            color: black !important;
+          .search-form {
+            position: relative;
+            width: 300px;
+          }
+          .search-results {
+            top: 40px;
+            width: 100%;
+            z-index: 10;
+          }
+          .btn {
+            padding: 6px 12px;
           }
           /* Light Theme */
           .light-theme {
             --navbar-bg: #f8f9fa;
-            --text-color: #000;
+            --text-color: #212529;
           }
           /* Dark Theme */
           .dark-theme {
             --navbar-bg: #212529;
-            --text-color: #fff;
+            --text-color: #f8f9fa;
           }
         `}
       </style>
-    </>
+    </nav>
   );
 };
 

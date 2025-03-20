@@ -8,7 +8,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,11 +20,14 @@ import java.util.Collections;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtService jwtService;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    // ✅ Constructor Injection (Preferred)
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -45,23 +47,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     User user = userRepository.findByEmail(email).orElse(null);
 
                     if (user != null && jwtService.validateToken(token, user)) {
+
+                        // ✅ Ensure "ROLE_" prefix for consistency
+                        String grantedAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(
-                                        user, null, Collections.singleton(new SimpleGrantedAuthority(role))
+                                        user, null, Collections.singleton(new SimpleGrantedAuthority(grantedAuthority))
                                 );
+
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        System.out.println("User authenticated: " + email + " with role: " + role);
+
+                        System.out.println("✅ User authenticated: " + email + " with role: " + grantedAuthority);
                     }
                 }
             } catch (Exception e) {
-                System.out.println("Invalid JWT Token: " + e.getMessage());
+                System.out.println("❌ Invalid JWT Token: " + e.getMessage());
             }
         }
 
         filterChain.doFilter(request, response);
-    }
-    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
-        this.jwtService = jwtService;
-        this.userRepository = userRepository;
     }
 }
