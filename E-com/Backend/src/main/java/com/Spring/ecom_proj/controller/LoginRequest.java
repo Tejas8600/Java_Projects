@@ -3,6 +3,16 @@ package com.Spring.ecom_proj.controller;
 public class LoginRequest {
     private String email;
     private String password;
+    private String role; // ✅ Added role field
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
     private String adminKey; // ✅ Added admin key field
 
     // Getters and Setters

@@ -31,7 +31,11 @@ public class User {
     private String role = "USER"; // Default value
 
     public void setRole(String role) {
-        this.role = role.toUpperCase(); // ✅ Convert role to uppercase before saving
+        // Ensure only "USER" or "ADMIN" is stored in the DB (strip prefix)
+        if (role.startsWith("ROLE_")) {
+            role = role.substring(5); // Remove "ROLE_" prefix
+        }
+        this.role = role.toUpperCase(); //  Convert role to uppercase before saving
 
 }
 }

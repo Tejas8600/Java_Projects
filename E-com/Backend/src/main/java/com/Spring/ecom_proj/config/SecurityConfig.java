@@ -1,6 +1,5 @@
 package com.Spring.ecom_proj.config;
 
-import com.Spring.ecom_proj.controller.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,19 +7,25 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+
+import com.Spring.ecom_proj.repo.UserRepository;
+import com.Spring.ecom_proj.service.JwtService;
 
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
-//    private final JwtService jwtService;
-//
-//    // ✅ Constructor Injection
-//    public SecurityConfig(JwtService jwtService) {
-//        this.jwtService = jwtService;
-//    }
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+
+    //  Constructor Injection
+    public SecurityConfig(JwtService jwtService, UserRepository userRepository) {
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,8 +38,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login", "/auth/signup", "/api/cart/**").permitAll()
-                        .requestMatchers("/admin-dashboard").hasAuthority("ADMIN")  // Restrict admin access
-                        .requestMatchers("/api/products/**").hasAnyAuthority("ADMIN", "USER")  // Allow both admin and user roles
+                        .requestMatchers("/admin-dashboard").hasAuthority("ROLE_ADMIN") // ✅ Fix authority prefix
+                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER") // ✅ Fix authority prefix
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -44,14 +49,13 @@ public class SecurityConfig {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowedOrigins(List.of("http://localhost:5173"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
                     config.setAllowCredentials(true);
-//                    config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
                     return config;
                 }));
-//        .addFilterBefore(new JwtAuthenticationFilter(jwtService),
-//                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
+        // ✅ Add JwtAuthenticationFilter using constructor injection
+        http.addFilterBefore(new JwtAuthenticationFilter(jwtService, userRepository), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
