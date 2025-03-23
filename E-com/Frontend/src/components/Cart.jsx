@@ -1,142 +1,231 @@
-import React, { useContext, useState, useEffect } from "react";
+
+
+import React, { useContext } from "react";
 import AppContext from "../Context/Context";
-import axios from "axios";
-import CheckoutPopup from "./CheckoutPopup";
-import { Button } from 'react-bootstrap';
 
-console.log('Cart component is rendering...');  //Debugging
 const Cart = () => {
-  const { cart, removeFromCart, clearCart } = useContext(AppContext);
-  console.log('Cart from context:', cart);  //Debugging
-  const [cartItems, setCartItems] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [showModal, setShowModal] = useState(false);
+  const { cart, removeFromCart, addToCart } = useContext(AppContext);
 
-  // console.log('Token:', token); //Debugging
-  // console.log('Role:', role);   //Debugging
+  // ✅ Calculate Total Price
+  const calculateTotal = () => {
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
 
-  useEffect(() => {
-    const role = localStorage.getItem('role');
-    const token = localStorage.getItem('token');
-    console.log('Token in useEffect:', token);
-    console.log('Checking token and role in useEffect...');
-    if (token && role === 'User') {
-      console.log('Fetching cart...');  //Debugging
-      fetchCartItems();
-    }
-  }, [cart, token, role]);
-
-  const fetchCartItems = async () => {
-    try {
-      console.log('Fetching cart items...');  //Debugging
-      const response = await axios.get('http://localhost:8080/api/cart', {
-        headers: {
-          'Authorization': `Bearer ${token}` // ✅ Pass token here
-        }
-      });
-      console.log('Cart Items:', response.data);
-      setCartItems(response.data);
-    } catch (error) {
-      console.error('Error fetching cart items:', error);
+  // ✅ Handle Quantity Change
+  const handleQuantityChange = (productId, newQuantity) => {
+    if (newQuantity >= 1) {
+      addToCart({ id: productId, quantity: newQuantity });
     }
   };
 
-  useEffect(() => {
-    console.log("Cart state updated:", cartItems); // Debugging
-    const total = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
+  if (cart.length === 0) {
+    return (
+      <div className="container mt-5">
+        <h2 className="text-center text-muted">🛒 Your cart is empty</h2>
+      </div>
     );
-    setTotalPrice(total);
-  }, [cartItems]);
-
-  const handleIncreaseQuantity = (itemId) => {
-    setCartItems(cartItems.map(item =>
-      item.id === itemId
-        ? { ...item, quantity: item.quantity + 1 }
-        : item
-    ));
-  };
-
-  const handleDecreaseQuantity = (itemId) => {
-    setCartItems(cartItems.map(item =>
-      item.id === itemId
-        ? { ...item, quantity: Math.max(item.quantity - 1, 1) }
-        : item
-    ));
-  };
-
-  const handleRemoveFromCart = (itemId) => {
-    removeFromCart(itemId);
-    setCartItems(cartItems.filter(item => item.id !== itemId));
-  };
-
-  const handleCheckout = async () => {
-    try {
-      for (const item of cartItems) {
-        const { imageUrl, ...rest } = item;
-
-        await axios.put(
-          `http://localhost:8080/api/product/${item.id}`,
-          { ...rest },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // ✅ Ensure token is passed here
-            },
-          }
-        );
-      }
-      clearCart();
-      setCartItems([]);
-      setShowModal(false);
-    } catch (error) {
-      console.error("Error during checkout:", error);
-    }
-  };
-
-  if (!token || role !== 'User') {
-    return <p>Please login to view your cart.</p>;
   }
 
   return (
-    <div className="cart-container">
-      <div className="shopping-cart">
-        <div className="title">Shopping Bag</div>
-        {cartItems.length === 0 ? (
-          <div className="empty">
-            <h4>Your cart is empty</h4>
-          </div>
-        ) : (
-          <>
-            {cartItems.map((item) => (
-              <div key={item.id} className="cart-item">
-                <img src={item.imageUrl} alt={item.name} className="cart-item-image" />
-                <div className="description">
-                  <span>{item.brand}</span>
-                  <span>{item.name}</span>
+    <div
+      className="container"
+      style={{
+        paddingTop: "80px", // ✅ Fixed overlap with navbar
+        display: "flex",
+        flexDirection: "column", // ✅ Ensure vertical alignment
+        alignItems: "center",
+        gap: "24px", // ✅ Space between cart and total section
+        maxWidth: "1200px", // ✅ Limit width to avoid overflow
+        margin: "0 auto", // ✅ Center the container
+      }}
+    >
+      <h2 className="mb-4 fw-bold text-center">🛒 Your Cart</h2>
+
+      {/* ✅ Cart Items */}
+      <div
+        className="cart-items"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", // ✅ Adjust card size
+          gap: "16px",
+          maxHeight: "600px",
+          overflowY: "auto", // ✅ Allow vertical scroll
+          width: "100%",
+          padding: "0 16px", // ✅ Remove side black space
+        }}
+      >
+        {cart.map((product) => (
+          <div
+            key={product.id}
+            className="card shadow"
+            style={{
+              borderRadius: "12px",
+              overflow: "hidden",
+              backgroundColor: "#ffffff",
+              transition: "transform 0.2s ease-in-out",
+              width: "100%", // ✅ Ensure uniform width
+              height: "420px", // ✅ Fixed card height
+              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            {/* ✅ Product Image */}
+            <img
+              src={product.imageUrl || "https://via.placeholder.com/150"}
+              alt={product.name}
+              className="card-img-top"
+              style={{
+                width: "100%",
+                height: "160px",
+                objectFit: "cover",
+                borderBottom: "1px solid #f0f0f0",
+              }}
+            />
+
+            {/* ✅ Product Details */}
+            <div className="card-body" style={{ padding: "12px" }}>
+              <h5
+                className="card-title fw-bold"
+                style={{
+                  fontSize: "1rem",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {product.name.toUpperCase()}
+              </h5>
+              <p
+                className="card-text text-muted"
+                style={{
+                  fontSize: "0.85rem",
+                  marginBottom: "8px",
+                }}
+              >
+                ₹{product.price} | Brand: {product.brand}
+              </p>
+
+              {/* ✅ Quantity & Remove Controls */}
+              <div
+                className="d-flex align-items-center justify-content-between"
+                style={{
+                  gap: "8px",
+                }}
+              >
+                {/* ✅ Quantity Controls */}
+                <div
+                  className="d-flex align-items-center"
+                  style={{
+                    gap: "6px",
+                  }}
+                >
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      handleQuantityChange(product.id, product.quantity - 1)
+                    }
+                    disabled={product.quantity <= 1}
+                    style={{
+                      minWidth: "36px",
+                      padding: "4px 6px",
+                      fontSize: "14px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    −
+                  </button>
+
+                  <span
+                    style={{
+                      width: "40px",
+                      height: "32px",
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                      backgroundColor: "#f8f8f8",
+                    }}
+                  >
+                    {product.quantity}
+                  </span>
+
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      handleQuantityChange(product.id, product.quantity + 1)
+                    }
+                    style={{
+                      minWidth: "36px",
+                      padding: "4px 6px",
+                      fontSize: "14px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    +
+                  </button>
                 </div>
-                <div className="quantity">
-                  <button onClick={() => handleIncreaseQuantity(item.id)}>+</button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => handleDecreaseQuantity(item.id)}>-</button>
-                </div>
-                <div className="total-price">${item.price * item.quantity}</div>
-                <button onClick={() => handleRemoveFromCart(item.id)}>Remove</button>
+
+                {/* ✅ Remove Button */}
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={() => removeFromCart(product.id)}
+                  style={{
+                    fontSize: "14px",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Remove
+                </button>
               </div>
-            ))}
-            <div className="total">Total: ${totalPrice}</div>
-            <Button onClick={() => setShowModal(true)}>Checkout</Button>
-          </>
-        )}
+            </div>
+          </div>
+        ))}
       </div>
-      <CheckoutPopup
-        show={showModal}
-        handleClose={() => setShowModal(false)}
-        cartItems={cartItems}
-        totalPrice={totalPrice}
-        handleCheckout={handleCheckout}
-      />
+
+      {/* ✅ Total Price Section */}
+      <div
+        className="total-price-section mt-4"
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          padding: "20px",
+          backgroundColor: "#f8f9fa",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          textAlign: "center",
+          margin: "0 auto", // ✅ Center align total price section
+        }}
+      >
+        <h4
+          className="fw-bold"
+          style={{
+            color: "#333", // ✅ Dark gray for better contrast
+            fontSize: "1.5rem",
+            marginBottom: "12px",
+          }}
+        >
+          Total: ₹<span>{calculateTotal()}</span>
+        </h4>
+
+        <button
+          className="btn btn-success mt-2 px-4 py-2"
+          style={{
+            fontSize: "16px",
+            fontWeight: "bold",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            width: "100%",
+            maxWidth: "250px",
+          }}
+        >
+          Proceed to Checkout
+        </button>
+      </div>
     </div>
   );
 };

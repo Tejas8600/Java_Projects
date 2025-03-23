@@ -47,6 +47,7 @@ public class JwtService {
 
         // ✅ Ensure ROLE_ prefix consistency
         String role = (String) claims.get("role");
+//        System.out.println("✅ Extracted Role from Token: " + role); //Debugging
         if (!role.startsWith("ROLE_")) {
             role = "ROLE_" + role;
         }

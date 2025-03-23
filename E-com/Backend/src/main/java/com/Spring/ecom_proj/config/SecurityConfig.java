@@ -39,7 +39,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login", "/auth/signup").permitAll()
                         .requestMatchers("/admin-dashboard").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER") // ✅ Ensure both roles can access products
+                        .requestMatchers("/api/products/category/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER") // ✅ Ensure both roles can access products
+                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

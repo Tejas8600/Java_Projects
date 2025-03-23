@@ -4,7 +4,6 @@ import com.Spring.ecom_proj.model.Product;
 import com.Spring.ecom_proj.repo.ProductRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -27,11 +26,8 @@ public class ProductService {
     public Product addProduct(Product product, MultipartFile imageFile) throws IOException {
         product.setImageName(imageFile.getOriginalFilename());
         product.setImageType(imageFile.getContentType());
-
-//        we cant directly get image so use "getBytes" to convert it into bytes.
         product.setImageData(imageFile.getBytes());
         return repo.save(product);
-
     }
 
     public Product updateProduct(int id, Product product, MultipartFile imageFile) throws IOException {
@@ -45,7 +41,12 @@ public class ProductService {
         repo.deleteById(id);
     }
 
-    public  List<Product> searchProducts(String keyword) {
+    public List<Product> searchProducts(String keyword) {
         return repo.SearchProducts(keyword);
+    }
+
+    // ✅ Fixed: Use repo instance instead of static reference
+    public List<Product> getProductsByCategory(String category) {
+        return repo.findByCategory(category);
     }
 }

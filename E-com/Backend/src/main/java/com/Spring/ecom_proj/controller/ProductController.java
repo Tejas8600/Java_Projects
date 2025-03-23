@@ -106,4 +106,15 @@ public ResponseEntity<?> addProduct(@RequestPart("product") String productJson,
         List<Product> products = service.searchProducts(keyword);
         return new  ResponseEntity<>(products,HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')") // ✅ Allow both USER and ADMIN roles
+    @GetMapping("/products/category/{category}")
+    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable String category) {
+        List<Product> products = service.getProductsByCategory(category);
+        if (!products.isEmpty()) {
+            return new ResponseEntity<>(products, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

@@ -237,17 +237,21 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import AppContext from "../Context/Context";
 
-const Navbar = ({ onSelectCategory }) => {
+const Navbar = () => {
   const getInitialTheme = () => localStorage.getItem("theme") || "light-theme";
 
   const [theme, setTheme] = useState(getInitialTheme());
   const [input, setInput] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { cart } = useContext(AppContext);
+  const { cart, setData, setSelectedCategory } = useContext(AppContext);
 
   const token = localStorage.getItem("token");
+  console.log("📌 Token:", token); //Debugging
+
+
   const role = localStorage.getItem("role");
   const userEmail = localStorage.getItem("userEmail");
   const navigate = useNavigate();
@@ -267,16 +271,77 @@ const Navbar = ({ onSelectCategory }) => {
     setInput(value);
     if (value.length > 0) {
       setShowSearchResults(true);
+      setLoading(true);
       try {
+        if (!token) {
+          console.error("❌ No token found in localStorage");
+          return;
+        }
+
         const response = await axios.get(
-          `http://localhost:8080/api/products/search?keyword=${value}`
+          `http://localhost:8080/api/products/search?keyword=${value}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
+
         setSearchResults(response.data);
+        setData(response.data);
       } catch (error) {
         console.error("❌ Error searching:", error);
+        setSearchResults([]);
+      } finally {
+        setLoading(false);
       }
     } else {
       setShowSearchResults(false);
+      setSearchResults([]);
+    }
+  };
+
+  // ✅ Handle Category Selection
+  const handleCategorySelect = async (category) => {
+    setSelectedCategory(category);
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No token found in localStorage");
+        return;
+      }
+
+      console.log(`📌 Fetching products for category: ${category}`);
+
+      const response = await axios.get(
+        `http://localhost:8080/api/products/category/${category}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ Fix token format
+          },
+        }
+      );
+
+      if (response.data.length > 0) {
+        setData(response.data);
+        console.log(`✅ Products fetched for category: ${category}`, response.data);
+      } else {
+        console.warn(`⚠️ No products found for category: ${category}`);
+        setData([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching category products:", error);
+
+      // ✅ Show alert only if no data fetched after final attempt
+      if (error.response && error.response.status === 403) {
+        setTimeout(() => {
+          alert("❌ Access forbidden. Please check your permissions.");
+        }, 300); // ✅ Delay to avoid false alert
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -289,9 +354,12 @@ const Navbar = ({ onSelectCategory }) => {
 
   return (
     <nav className={`navbar navbar-expand-lg fixed-top ${theme}`}>
-      <div className="container-fluid">
+      <div className="container-fluid"> 
         {/* ✅ Logo */}
-        <a className="navbar-brand" href="https://tejas8600.github.io/Portfolio/">
+        <a
+          className="navbar-brand"
+          href="https://tejas8600.github.io/Portfolio/"
+        >
           Tejas Puri
         </a>
 
@@ -326,18 +394,23 @@ const Navbar = ({ onSelectCategory }) => {
                 Categories
               </Link>
               <ul className="dropdown-menu">
-                {["Laptop", "Headphone", "Mobile", "Electronics", "Toys", "Fashion"].map(
-                  (category) => (
-                    <li key={category}>
-                      <button
-                        className="dropdown-item"
-                        onClick={() => onSelectCategory(category)}
-                      >
-                        {category}
-                      </button>
-                    </li>
-                  )
-                )}
+                {[
+                  "Laptop",
+                  "Headphone",
+                  "Mobile",
+                  "Electronics",
+                  "Toys",
+                  "Fashion",
+                ].map((category) => (
+                  <li key={category}>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      {category}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </li>
           </ul>
@@ -352,6 +425,9 @@ const Navbar = ({ onSelectCategory }) => {
               onChange={(e) => handleChange(e.target.value)}
               aria-label="Search"
             />
+            {loading && (
+              <span className="spinner-border spinner-border-sm ms-2" />
+            )}
             {showSearchResults && (
               <ul className="list-group position-absolute search-results">
                 {searchResults.length > 0 ? (
@@ -363,9 +439,11 @@ const Navbar = ({ onSelectCategory }) => {
                     </li>
                   ))
                 ) : (
-                  <li className="list-group-item text-danger">
-                    No product with such name
-                  </li>
+                  !loading && (
+                    <li className="list-group-item text-danger">
+                      No product with such name
+                    </li>
+                  )
                 )}
               </ul>
             )}
@@ -373,14 +451,12 @@ const Navbar = ({ onSelectCategory }) => {
 
           {/* ✅ Right Section (User Info + Cart + Theme + Logout) */}
           <div className="d-flex align-items-center gap-3">
-            {/* ✅ Display User Email */}
             {token && userEmail && (
               <span className="nav-link text-dark fw-semibold">
                 {`Welcome, ${userEmail.split("@")[0]}`}
               </span>
             )}
 
-            {/* ✅ Cart Icon */}
             {token && (
               <Link className="nav-link" to="/cart">
                 <i className="bi bi-cart-fill"></i>
@@ -401,7 +477,7 @@ const Navbar = ({ onSelectCategory }) => {
               )}
             </button>
 
-            {/* ✅ Logout Button */}
+            {/* ✅ Logout */}
             {token ? (
               <button className="btn btn-danger" onClick={handleLogout}>
                 Logout
@@ -420,7 +496,7 @@ const Navbar = ({ onSelectCategory }) => {
         </div>
       </div>
 
-      {/* ✅ Custom CSS for Fixing Alignment */}
+      {/* ✅ Custom CSS */}
       <style>
         {`
           .navbar {
@@ -432,24 +508,15 @@ const Navbar = ({ onSelectCategory }) => {
             font-weight: 500;
             color: var(--text-color) !important;
           }
-          .search-form {
-            position: relative;
-            width: 300px;
-          }
           .search-results {
             top: 40px;
             width: 100%;
             z-index: 10;
           }
-          .btn {
-            padding: 6px 12px;
-          }
-          /* Light Theme */
           .light-theme {
             --navbar-bg: #f8f9fa;
             --text-color: #212529;
           }
-          /* Dark Theme */
           .dark-theme {
             --navbar-bg: #212529;
             --text-color: #f8f9fa;
